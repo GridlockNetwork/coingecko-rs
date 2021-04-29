@@ -25,40 +25,41 @@ pub struct Client {
 }
 
 impl Client {
-    pub fn new(http: HttpClient) -> Self {
-        Self { http }
+    pub fn new() -> Result<Self, Error> {
+        let http = isahc::HttpClient::new()?;
+        Ok(Self { http })
     }
 
     /// Check if CoinGecko is reachable
-    pub async fn ping(&self) -> Result<Ping, Error> {
+    pub fn ping(&self) -> Result<Ping, Error> {
         const PING: &str = concatcp!(crate::API, "/ping");
 
-        utils::get_json(&self.http, PING).await
+        utils::get_json(&self.http, PING)
     }
 
     /// Fetches the current price of any cryptocurrencies in any other supported currencies you need.
-    pub async fn simple_price(&self, req: SimplePriceReq) -> Result<SimplePrices, Error> {
+    pub fn simple_price(&self, req: SimplePriceReq) -> Result<SimplePrices, Error> {
         const SIMPLE: &str = concatcp!(crate::API, "/simple/price");
 
         let uri = fomat!((SIMPLE) "?" (req.query()));
 
-        utils::get_json(&self.http, &uri).await
+        utils::get_json(&self.http, &uri)
     }
 
     /// Fetches detailed information about a particular coin by its ID.
-    pub async fn coin_info(&self, coin: &str) -> Result<CoinInfo, Error> {
+    pub fn coin_info(&self, coin: &str) -> Result<CoinInfo, Error> {
         const COINS: &str = concatcp!(crate::API, "/coins");
 
         let uri = fomat!((COINS) "/" (coin));
 
-        utils::get_json(&self.http, &uri).await
+        utils::get_json(&self.http, &uri)
     }
 
     /// Fetches a list of coins supported by CoinGecko
-    pub async fn coins_list(&self) -> Result<Vec<Coin>, Error> {
+    pub fn coins_list(&self) -> Result<Vec<Coin>, Error> {
         const COINS_LIST: &str = concatcp!(crate::API, "/coins/list");
 
-        utils::get_json(&self.http, COINS_LIST).await
+        utils::get_json(&self.http, COINS_LIST)
     }
 }
 
@@ -66,6 +67,8 @@ impl Client {
 pub enum Error {
     #[error("HTTP error")]
     Http(#[from] isahc::Error),
+    #[error("HTTP error")]
+    HttpError(#[from] isahc::http::Error),
     #[error("IO error")]
     Io(#[from] std::io::Error),
     #[error("Deserialization error")]
